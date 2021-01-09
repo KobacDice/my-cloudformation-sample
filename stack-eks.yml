@@ -352,6 +352,24 @@ Resources:
         - !Ref Subnet02
         - !Ref Subnet03
 
+  BastionInstance:
+    Type: 'AWS::EC2::Instance'
+    DependsOn: EKSNodegroup
+    Properties:
+      ImageId: ami-374db956
+      InstanceType: t2.nano
+      SecurityGroupIds:
+        - !Ref NodeSecurityGroup
+      SubnetId: !Ref Subnet01
+      KeyName: !Ref KeyName
+      UserData: !Base64
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash
+            - |
+              sudo yum update -y
+
 Outputs:
   SubnetIds:
     Description: All subnets in the VPC
@@ -365,3 +383,10 @@ Outputs:
   NodeInstanceRole:
     Description: The node instance role
     Value: !GetAtt NodeInstanceRole.Arn
+
+  BastionPublicIP:
+    Description: Public IP address of the newly created EC2 instance
+    Value:
+      Fn::GetAtt:
+      - BastionInstance
+      - PublicIp
