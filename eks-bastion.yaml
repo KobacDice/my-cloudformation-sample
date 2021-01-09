@@ -5,17 +5,13 @@ Parameters:
     Description: Name of and existing EC2 KeyPair to enable SSH access to the instance
     Type: AWS::EC2::KeyPair::KeyName
 
-  VpcId:
+  VPC:
     Description: VpcId of your existing Virtual Private Cloud (VPC)
     Type: AWS::EC2::VPC::Id
 
   SubnetId:
     Description: SubnetId of an existing subnet in your Virtual Private Cloud (VPC)
     Type: AWS::EC2::Subnet::Id
-
-  InstanceSecurityGroupId:
-    Description: SecurityGroup of an existing in your  Virtual Private Cloud (VPC)
-    Type: AWS::EC2::SecurityGroup::Id
 
   SSHLocation:
     Description: The IP address range that can be used to SSH to the EC2 instances
@@ -27,42 +23,82 @@ Parameters:
     ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/x.
 
 Resources:
-  Ec2Instance:
+
+  BastionInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: "/"
+      Roles:
+      - !Ref BastionInstanceRole
+  BastionInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  BastionSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      VpcId: !Ref VPC
+      GroupDescription: Enable SSH access via port 22
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHLocation
+
+  BastionInstance:
     Type: 'AWS::EC2::Instance'
+    #DependsOn: EKSNodegroup
     Properties:
       ImageId: ami-374db956
       InstanceType: t2.nano
       SecurityGroupIds:
-        - !Ref InstanceSecurityGroupId
+        - !Ref BastionSecurityGroup
       SubnetId: !Ref SubnetId
       KeyName: !Ref KeyName
-      UserData: !Base64 
+      IamInstanceProfile: !Ref BastionInstanceProfile
+      UserData: !Base64
         'Fn::Join':
           - ''
           - - |
               #!/bin/bash
             - |
-              sudo yum update -y
+              sudo yum install wget jq
+            - |
+              sudo yum -y update aws-cli
+            - |
+              aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
 
 Outputs:
   InstanceId:
     Description: InstanceId of the newly created EC2 instance
-    Value: !Ref Ec2Instance
+    Value: !Ref BastionInstance
   AZ:
     Description: Availability Zone of the newly created EC2 instance
     Value:
       Fn::GetAtt:
-      - Ec2Instance
+      - BastionInstance
       - AvailabilityZone
   PublicDNS:
     Description: Public DNSName of the newly created EC2 instance
     Value:
       Fn::GetAtt:
-      - Ec2Instance
+      - BastionInstance
       - PublicDnsName
   PublicIP:
     Description: Public IP address of the newly created EC2 instance
     Value:
       Fn::GetAtt:
-      - Ec2Instance
+      - BastionInstance
       - PublicIp
