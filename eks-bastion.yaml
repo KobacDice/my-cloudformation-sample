@@ -13,6 +13,10 @@ Parameters:
     Description: SubnetId of an existing subnet in your Virtual Private Cloud (VPC)
     Type: AWS::EC2::Subnet::Id
 
+  BastionInstanceRole:
+    Description: EKS NodeRole
+    Type: AWS::IAM::Role::Id
+
   SSHLocation:
     Description: The IP address range that can be used to SSH to the EC2 instances
     Type: String
@@ -30,21 +34,6 @@ Resources:
       Path: "/"
       Roles:
       - !Ref BastionInstanceRole
-  BastionInstanceRole:
-    Type: AWS::IAM::Role
-    Properties:
-      AssumeRolePolicyDocument:
-        Version: '2012-10-17'
-        Statement:
-        - Effect: Allow
-          Principal:
-            Service:
-            - ec2.amazonaws.com
-          Action:
-          - sts:AssumeRole
-      Path: "/"
-      ManagedPolicyArns:
-        - arn:aws:iam::aws:policy/AdministratorAccess
 
   BastionSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -74,11 +63,11 @@ Resources:
           - - |
               #!/bin/bash
             - |
-              sudo yum install wget jq
+              wget https://raw.githubusercontent.com/KobacDice/my-cloudformation-sample/main/bastion_bootstrap.sh
             - |
-              sudo yum -y update aws-cli
+              chmod 755 bastion_bootstrap.sh
             - |
-              aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
+              /bin/sh bastion_bootstrap.sh
 
 Outputs:
   InstanceId:

@@ -25,5 +25,5 @@ EOF
 }
 
 install_kubernetes_client_tools
-aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
 
+aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
