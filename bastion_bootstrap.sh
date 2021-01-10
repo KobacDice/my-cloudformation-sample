@@ -1,5 +1,8 @@
 #!/bin/bash -e
 
+sudo yum install wget jq
+sudo yum -y update aws-cli
+
 function install_kubernetes_client_tools() {
     mkdir -p /usr/local/bin/
     curl --retry 5 -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.18.8/2020-09-18/bin/linux/amd64/kubectl
@@ -22,3 +25,5 @@ EOF
 }
 
 install_kubernetes_client_tools
+aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
+

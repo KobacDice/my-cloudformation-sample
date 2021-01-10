@@ -261,6 +261,7 @@ Resources:
         - arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy
         - arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly
       RoleName: eksNodeInstanceRole
+
   NodeSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
@@ -366,6 +367,7 @@ Resources:
       Path: "/"
       Roles:
       - !Ref BastionInstanceRole
+
   BastionInstanceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -381,6 +383,7 @@ Resources:
       Path: "/"
       ManagedPolicyArns:
         - arn:aws:iam::aws:policy/AdministratorAccess
+      RoleName: EKSBastionInstanceRole
 
   BastionSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
@@ -401,7 +404,7 @@ Resources:
       InstanceType: t2.nano
       SecurityGroupIds:
         - !Ref BastionSecurityGroup
-      SubnetId: !Ref SubnetId
+      SubnetId: !Ref Subnet01
       KeyName: !Ref KeyName
       IamInstanceProfile: !Ref BastionInstanceProfile
       UserData: !Base64
@@ -410,11 +413,11 @@ Resources:
           - - |
               #!/bin/bash
             - |
-              sudo yum install wget jq
+              wget https://raw.githubusercontent.com/KobacDice/my-cloudformation-sample/main/bastion_bootstrap.sh
             - |
-              sudo yum -y update aws-cli
+              chmod 755 bastion_bootstrap.sh
             - |
-              aws eks --region ap-northeast-1 update-kubeconfig --name eks-dev-cluster
+              /bin/sh bastion_bootstrap.sh
 
 Outputs:
   SubnetIds:
