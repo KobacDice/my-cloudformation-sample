@@ -13,10 +13,6 @@ Parameters:
     Description: SubnetId of an existing subnet in your Virtual Private Cloud (VPC)
     Type: AWS::EC2::Subnet::Id
 
-  BastionInstanceRole:
-    Description: EKS NodeRole
-    Type: AWS::IAM::Role::Id
-
   SSHLocation:
     Description: The IP address range that can be used to SSH to the EC2 instances
     Type: String
@@ -33,7 +29,7 @@ Resources:
     Properties:
       Path: "/"
       Roles:
-      - !Ref BastionInstanceRole
+      - eksNodeInstanceRole
 
   BastionSecurityGroup:
     Type: 'AWS::EC2::SecurityGroup'
